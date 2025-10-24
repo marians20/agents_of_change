@@ -1,0 +1,221 @@
+﻿@page "/"
+@using AskLISA.Blazor.Models
+@using AskLISA.Blazor.Services
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject IAgentTeamService AgentTeamService
+@inject ProtectedSessionStorage SessionStorage
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Ask LISA</PageTitle>
+
+<div class="chat-container" @ref="chatContainerRef">
+  @if (!messages.Any())
+  {
+    <div class="default-text">
+      <h1>Ask LISA</h1>
+      <p>I'm LISA, your Language-Integrated Stock Analyst.<br />How can I help you today?</p>
+    </div>
+  }
+  else
+  {
+    @foreach (var message in messages)
+    {
+      <div class="chat @(message.Role == "user" ? "outgoing" : "incoming")">
+        <div class="chat-content">
+          <div class="chat-details">
+            <img src="@(message.Role == "user" ? "/images/user.jpg" : "/images/chatbot.jpg")" class="avatar"
+              alt="@(message.Role == "user" ? "user" : "chatbot")-img">
+            <div class="markdown-output">
+              @if (message.IsError)
+              {
+                <p class="error">@message.Content</p>
+              }
+              else
+              {
+                @((MarkupString)Markdig.Markdown.ToHtml(message.Content ?? ""))
+              }
+            </div>
+          </div>
+          @if (!string.IsNullOrEmpty(message.ImageUrl))
+          {
+            <img src="@message.ImageUrl" class="chart" alt="ai-generated chart" />
+          }
+        </div>
+      </div>
+    }
+
+    @if (isProcessing)
+    {
+      <div class="chat incoming">
+        <div class="chat-content">
+          <div class="chat-details">
+            <img src="/images/chatbot.jpg" class="avatar" alt="chatbot-img">
+            <div class="typing-animation">
+              <div class="typing-dot" style="--delay: 0.2s"></div>
+              <div class="typing-dot" style="--delay: 0.3s"></div>
+              <div class="typing-dot" style="--delay: 0.4s"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>
+
+<div class="typing-container">
+  <div class="typing-content">
+    <div class="typing-textarea">
+      <textarea id="chat-input" @bind="currentInput" @bind:event="oninput" @onkeydown="HandleKeyDown" spellcheck="false"
+        placeholder="Enter a prompt here" disabled="@isProcessing"></textarea>
+    </div>
+    <div class="typing-controls">
+      <span id="send-btn" class="material-symbols-rounded" @onclick="SendMessage">send</span>
+      <span id="theme-btn" class="material-symbols-rounded" @onclick="ToggleTheme">@(isDarkMode ? "light_mode" :
+                "dark_mode")</span>
+      <span id="delete-btn" class="material-symbols-rounded" @onclick="ClearConversation">delete</span>
+    </div>
+  </div>
+</div>
+
+@code {
+  private List<ChatMessage> messages = new();
+  private string currentInput = string.Empty;
+  private bool isProcessing = false;
+  private bool isDarkMode = true;
+  private string sessionId = string.Empty;
+  private ElementReference chatContainerRef;
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (firstRender)
+    {
+      // Load session ID or create new one
+      var result = await SessionStorage.GetAsync<string>("sessionId");
+      sessionId = result.Success ? result.Value! : Guid.NewGuid().ToString();
+      await SessionStorage.SetAsync("sessionId", sessionId);
+
+      // Load theme preference
+      var themeResult = await SessionStorage.GetAsync<bool>("isDarkMode");
+      if (themeResult.Success)
+      {
+        isDarkMode = themeResult.Value;
+        StateHasChanged();
+      }
+
+      // Apply theme
+      await ApplyThemeAsync();
+    }
+
+    // Scroll to bottom after rendering
+    await ScrollToBottomAsync();
+  }
+
+  private async Task SendMessage()
+  {
+    if (string.IsNullOrWhiteSpace(currentInput) || isProcessing)
+      return;
+
+    var userMessage = new ChatMessage
+    {
+      Role = "user",
+      Content = currentInput,
+      Timestamp = DateTime.UtcNow
+    };
+
+    messages.Add(userMessage);
+    var userInput = currentInput;
+    currentInput = string.Empty;
+    isProcessing = true;
+    StateHasChanged();
+
+    try
+    {
+      var assistantMessage = new ChatMessage
+      {
+        Role = "assistant",
+        Content = string.Empty,
+        Timestamp = DateTime.UtcNow
+      };
+
+      messages.Add(assistantMessage);
+
+      // Get conversation history (excluding the current messages being added)
+      var history = messages.Take(messages.Count - 2).ToList();
+
+      await foreach (var chunk in AgentTeamService.ProcessQueryAsync(userInput, sessionId, history))
+      {
+        assistantMessage.Content += chunk;
+        StateHasChanged();
+        await ScrollToBottomAsync();
+      }
+    }
+    catch (Exception ex)
+    {
+      var errorMessage = new ChatMessage
+      {
+        Role = "assistant",
+        Content = $"I'm sorry, but something went wrong. ({ex.Message})",
+        IsError = true,
+        Timestamp = DateTime.UtcNow
+      };
+
+      // Remove the empty assistant message if it exists
+      if (messages.LastOrDefault()?.Content == string.Empty)
+      {
+        messages.RemoveAt(messages.Count - 1);
+      }
+
+      messages.Add(errorMessage);
+    }
+    finally
+    {
+      isProcessing = false;
+      StateHasChanged();
+    }
+  }
+
+  private async Task HandleKeyDown(KeyboardEventArgs e)
+  {
+    if (e.Key == "Enter" && !e.ShiftKey)
+    {
+      await SendMessage();
+    }
+  }
+
+  private async Task ToggleTheme()
+  {
+    isDarkMode = !isDarkMode;
+    await SessionStorage.SetAsync("isDarkMode", isDarkMode);
+    await ApplyThemeAsync();
+  }
+
+  private async Task ApplyThemeAsync()
+  {
+    var theme = isDarkMode ? "dark" : "light";
+    await JSRuntime.InvokeVoidAsync("applyTheme", theme);
+  }
+
+  private async Task ClearConversation()
+  {
+    bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete the conversation?");
+    if (confirmed)
+    {
+      messages.Clear();
+      sessionId = Guid.NewGuid().ToString();
+      await SessionStorage.SetAsync("sessionId", sessionId);
+      StateHasChanged();
+    }
+  }
+
+  private async Task ScrollToBottomAsync()
+  {
+    try
+    {
+      await JSRuntime.InvokeVoidAsync("scrollToBottom");
+    }
+    catch
+    {
+      // Ignore errors during scroll
+    }
+  }
+}

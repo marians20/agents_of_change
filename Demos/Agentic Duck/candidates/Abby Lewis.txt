@@ -1,0 +1,53 @@
+Abby Lewis
+Principal Software Engineer
+Overland Park, Kansas
+
+EXPERIENCE
+Oracle	February 2017 - Present
+Principal Software Engineer
+Streamlined data pipeline, reducing the delay in data availability by 20%
+Led a global team of 10 developers to deliver complex projects within stringent timelines, improving efficiency by 15%
+Elevated database performance by integrating advanced index strategies, increasing data retrieval speed by 25%
+Refactored code base for main product line reducing memory usage by 30%.
+Developed backend infrastructure using Node.js, boosting service reliability by 20%.
+
+Reddit		July 2011 - January 2017
+Senior Software Engineer
+Integrated Elasticsearch to enable high-speed search capabilities, improving user experience by 40%.
+Implemented secure software development practices resulting in a 70% reduction in potential security vulnerabilities.
+Decreased server downtime by 30% by designing and implementing a novel error-handling process.
+
+Coached.com	October 2006 - June 2011
+Software Engineer
+Reengineered transaction processing algorithm, which improved transaction speed by 25%.
+Enforced good OOP practices, reducing debugging time by 15%
+Propitiated a methodology for automating test cases, augmenting test accuracy by 35%.
+
+Garmin	July 2003 - September 2006
+Junior Software Engineer
+Migrated hosting platform, reducing server costs by 30%.
+Assisted in optimizing database performance using advanced SQL scripts, improving data accessibility by 20%.
+Updated application security measures, which reduced the risk of data breaches by 10%.
+
+EDUCATION
+Stanford University 2007
+Master of Science in Computer Science
+Thesis: Security Protocols in Distributed Systems
+
+University of Tennessee	May 2003
+Bachelor of Science in Software Engineering
+Summa Cum Laude, GPA: 3.9/4.0
+
+SKILLS
+Programming Languages: Java (Expert), C# (Expert), Python (Intermediate), JavaScript (Intermediate), SQL (Advanced), PHP (Basic)
+Web Development: HTML5, CSS3, React.js (Intermediate), Node.js (Intermediate), Angular (Basic), RESTful APIs (Advanced)
+Database Management: Oracle SQL Developer (Advanced), MySQL (Advanced), MongoDB (Intermediate), PostgreSQL (Intermediate), Redis (Basic), Microsoft SQL Server (Basic)
+
+Development Tools & Techniques: Docker (Advanced), Kubernetes (Intermediate), Jenkins (Intermediate), Agile Methodologies (Expert), Git (Expert), JIRA (Expert)
+
+OTHER
+Certifications:Oracle Certified Professional, Java SE 11 Developer (2020), Certified Kubernetes Administrator (2019)
+Publications:Co-author of 'Continuous Integration and Deployment Patterns' in Journal of Software Engineering Practice (2018)
+Speaking Engagements:Panelist at DeveloperWeek Conference, 'The Future of Cloud Native Applications' (2021)
+Professional Memberships: Association for Computing Machinery (ACM) - Senior Member, Institute of Electrical and Electronics Engineers (IEEE) Member
+
